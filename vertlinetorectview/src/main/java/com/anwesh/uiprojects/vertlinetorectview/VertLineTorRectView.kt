@@ -89,4 +89,13 @@ class VertLineToRectView(ctx : Context) : View(ctx) {
         }
         return true
     }
+
+    companion object {
+
+        fun create(activity : Activity) : VertLineToRectView {
+            val view : VertLineToRectView = VertLineToRectView(activity)
+            activity.setContentView(view)
+            return view
+        }
+    }
 }
