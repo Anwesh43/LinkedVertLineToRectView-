@@ -13,7 +13,7 @@ import android.graphics.Path
 import android.app.Activity
 import android.content.Context
 
-val nodes : Int = 5
+val nodes : Int = 1
 val lines : Int = 2
 val scGap : Float = 0.02f
 val strokeFactor : Int = 90
@@ -76,15 +76,36 @@ fun Canvas.drawVLTRNode(i : Int, scale : Float, paint : Paint) {
 class VertLineToRectView(ctx : Context) : View(ctx) {
 
     private val paint : Paint = Paint(Paint.ANTI_ALIAS_FLAG)
+    private var scale : Float = 0f
+    private var dir : Float = 0f
+    private var animated : Boolean = false
 
     override fun onDraw(canvas : Canvas) {
+        canvas.drawVLTRNode(0, scale, paint)
+        scale += scGap * dir
+        if (scale > 1) {
+            dir = 0f
+            animated = false
+        }
+        if (animated) {
+            try {
+                Thread.sleep(delay)
+                this.invalidate()
+            } catch (ex: Exception) {
 
+            }
+        }
     }
 
     override fun onTouchEvent(event : MotionEvent) : Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-
+                if (dir == 0f) {
+                    dir = 1f
+                    scale = 0f
+                    animated = true
+                    this.postInvalidate()
+                }
             }
         }
         return true
