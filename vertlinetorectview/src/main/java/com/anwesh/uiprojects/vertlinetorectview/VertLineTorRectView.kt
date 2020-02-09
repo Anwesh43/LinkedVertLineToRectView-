@@ -15,15 +15,15 @@ import android.content.Context
 import android.os.SystemClock
 import android.util.Log
 
-val nodes : Int = 1
+val nodes : Int = 3
 val lines : Int = 2
 val scGap : Float = 0.02f
 val strokeFactor : Int = 90
 val delay : Long = 20
 val foreColor : Int = Color.parseColor("#673AB7")
 val backColor : Int = Color.parseColor("#BDBDBD")
-val hFactor : Float = 2f
-val wFactor : Float = 1f
+val hFactor : Float = 1f
+val wFactor : Float = 0.5f
 val sizeFactor : Float = 2.9f
 
 fun Int.inverse() : Float = 1f / this
@@ -78,13 +78,18 @@ fun Canvas.drawVLTRNode(i : Int, scale : Float, paint : Paint) {
 class VertLineToRectView(ctx : Context) : View(ctx) {
 
     private val paint : Paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val state : State = State()
     private val animator : Animator = Animator(this)
+    private var root : VLTNode = VLTNode(0)
+    private var curr : VLTNode = root
+    private var dir : Int = 1
 
     override fun onDraw(canvas : Canvas) {
-        canvas.drawVLTRNode(0, state.scale, paint)
+        root.draw(canvas, paint)
         animator.animate {
-            state.update {
+            curr.update {
+                curr = curr.getNext(dir) {
+                    dir *= -1
+                }
                 animator.stop()
             }
         }
@@ -94,7 +99,7 @@ class VertLineToRectView(ctx : Context) : View(ctx) {
     override fun onTouchEvent(event : MotionEvent) : Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-               state.startUpdating {
+               curr.startUpdating {
                    animator.start()
                }
             }
@@ -150,6 +155,48 @@ class VertLineToRectView(ctx : Context) : View(ctx) {
                 Log.d("stopping Animation", "${SystemClock.currentThreadTimeMillis()}")
                 animated = false
             }
+        }
+    }
+
+    data class VLTNode(var i : Int, val state : State = State()) {
+
+        private var next : VLTNode? = null
+        private var prev : VLTNode? = null
+
+        init {
+            addNeighbor()
+        }
+
+        fun addNeighbor() {
+            if (i < nodes - 1) {
+                next = VLTNode(i + 1)
+                next?.prev = this
+            }
+        }
+
+        fun draw(canvas : Canvas, paint : Paint) {
+            canvas.drawVLTRNode(i, state.scale, paint)
+            next?.draw(canvas, paint)
+        }
+
+        fun update(cb : () -> Unit) {
+            state.update(cb)
+        }
+
+        fun startUpdating(cb : () -> Unit) {
+            state.startUpdating(cb)
+        }
+
+        fun getNext(dir : Int, cb : () -> Unit) : VLTNode {
+            var curr : VLTNode? = prev
+            if (dir == 1) {
+                curr = next
+            }
+            if (curr != null) {
+                return curr
+            }
+            cb()
+            return this
         }
     }
 
