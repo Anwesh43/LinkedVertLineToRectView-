@@ -15,13 +15,13 @@ import android.content.Context
 import android.os.SystemClock
 import android.util.Log
 
-val nodes : Int = 3
+val nodes : Int = 5
 val lines : Int = 2
 val scGap : Float = 0.02f
 val strokeFactor : Int = 90
 val delay : Long = 20
 val foreColor : Int = Color.parseColor("#673AB7")
-val backColor : Int = Color.parseColor("#BDBDBD")
+val backColor : Int = Color.parseColor("#212121")
 val hFactor : Float = 1f
 val wFactor : Float = 0.5f
 val sizeFactor : Float = 2.9f
@@ -79,17 +79,13 @@ class VertLineToRectView(ctx : Context) : View(ctx) {
 
     private val paint : Paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val animator : Animator = Animator(this)
-    private var root : VLTNode = VLTNode(0)
-    private var curr : VLTNode = root
-    private var dir : Int = 1
+    private val vlt : VertLineToRect = VertLineToRect(0)
 
     override fun onDraw(canvas : Canvas) {
-        root.draw(canvas, paint)
+        canvas.drawColor(backColor)
+        vlt.draw(canvas, paint)
         animator.animate {
-            curr.update {
-                curr = curr.getNext(dir) {
-                    dir *= -1
-                }
+            vlt.update {
                 animator.stop()
             }
         }
@@ -99,7 +95,7 @@ class VertLineToRectView(ctx : Context) : View(ctx) {
     override fun onTouchEvent(event : MotionEvent) : Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-               curr.startUpdating {
+               vlt.startUpdating {
                    animator.start()
                }
             }
@@ -197,6 +193,31 @@ class VertLineToRectView(ctx : Context) : View(ctx) {
             }
             cb()
             return this
+        }
+    }
+
+    data class VertLineToRect(var i : Int) {
+
+        private var root : VLTNode = VLTNode(0)
+        private var curr : VLTNode = root
+        private var dir : Int = 1
+
+        fun draw(canvas : Canvas, paint : Paint) {
+            root.draw(canvas, paint)
+        }
+
+        fun  update(cb : () -> Unit) {
+            curr.update {
+                curr = curr.getNext(dir) {
+                    dir *= -1
+                }
+                cb()
+
+            }
+        }
+
+        fun startUpdating(cb : () -> Unit) {
+            curr.startUpdating(cb)
         }
     }
 
