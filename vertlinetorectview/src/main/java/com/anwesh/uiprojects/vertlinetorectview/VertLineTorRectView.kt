@@ -76,15 +76,12 @@ fun Canvas.drawVLTRNode(i : Int, scale : Float, paint : Paint) {
 class VertLineToRectView(ctx : Context) : View(ctx) {
 
     private val paint : Paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private var scale : Float = 0f
-    private var dir : Float = 0f
+    private val state : State = State()
     private var animated : Boolean = false
 
     override fun onDraw(canvas : Canvas) {
-        canvas.drawVLTRNode(0, scale, paint)
-        scale += scGap * dir
-        if (scale > 1) {
-            dir = 0f
+        canvas.drawVLTRNode(0, state.scale, paint)
+        state.update {
             animated = false
         }
         if (animated) {
@@ -100,15 +97,32 @@ class VertLineToRectView(ctx : Context) : View(ctx) {
     override fun onTouchEvent(event : MotionEvent) : Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                if (dir == 0f) {
-                    dir = 1f
-                    scale = 0f
+                state.startUpdating {
                     animated = true
                     this.postInvalidate()
                 }
             }
         }
         return true
+    }
+
+    data class State(var scale : Float = 0f, var dir : Float = 0f) {
+
+        fun update(cb : () -> Unit) {
+            scale += dir * scGap
+            if (scale > 1f) {
+                dir = 0f
+                cb()
+            }
+        }
+
+        fun startUpdating(cb : () -> Unit) {
+            if (dir == 0f) {
+                dir = 1f
+                scale = 0f
+                cb()
+            }
+        }
     }
 
     companion object {
