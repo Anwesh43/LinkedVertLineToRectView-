@@ -15,7 +15,7 @@ import android.content.Context
 import android.os.SystemClock
 import android.util.Log
 
-val nodes : Int = 5
+val nodes : Int = 2
 val lines : Int = 2
 val scGap : Float = 0.02f
 val strokeFactor : Int = 90
@@ -77,27 +77,16 @@ fun Canvas.drawVLTRNode(i : Int, scale : Float, paint : Paint) {
 
 class VertLineToRectView(ctx : Context) : View(ctx) {
 
-    private val paint : Paint = Paint(Paint.ANTI_ALIAS_FLAG)
-    private val animator : Animator = Animator(this)
-    private val vlt : VertLineToRect = VertLineToRect(0)
+    private val renderer : Renderer = Renderer(this)
 
     override fun onDraw(canvas : Canvas) {
-        canvas.drawColor(backColor)
-        vlt.draw(canvas, paint)
-        animator.animate {
-            vlt.update {
-                animator.stop()
-            }
-        }
-
+        renderer.render(canvas)
     }
 
     override fun onTouchEvent(event : MotionEvent) : Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-               vlt.startUpdating {
-                   animator.start()
-               }
+                renderer.handleTap()
             }
         }
         return true
@@ -218,6 +207,29 @@ class VertLineToRectView(ctx : Context) : View(ctx) {
 
         fun startUpdating(cb : () -> Unit) {
             curr.startUpdating(cb)
+        }
+    }
+
+    data class Renderer(var view : VertLineToRectView) {
+
+        private val animator : Animator = Animator(view)
+        private val vlt : VertLineToRect = VertLineToRect(0)
+        private val paint : Paint = Paint(Paint.ANTI_ALIAS_FLAG)
+
+        fun render(canvas : Canvas) {
+            canvas.drawColor(backColor)
+            vlt.draw(canvas, paint)
+            animator.animate {
+                vlt.update {
+                    animator.stop()
+                }
+            }
+        }
+
+        fun handleTap() {
+            vlt.startUpdating {
+                animator.start()
+            }
         }
     }
 
