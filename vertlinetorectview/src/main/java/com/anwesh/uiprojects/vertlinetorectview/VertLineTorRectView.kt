@@ -12,6 +12,8 @@ import android.graphics.Color
 import android.graphics.Path
 import android.app.Activity
 import android.content.Context
+import android.os.SystemClock
+import android.util.Log
 
 val nodes : Int = 1
 val lines : Int = 2
@@ -77,30 +79,24 @@ class VertLineToRectView(ctx : Context) : View(ctx) {
 
     private val paint : Paint = Paint(Paint.ANTI_ALIAS_FLAG)
     private val state : State = State()
-    private var animated : Boolean = false
+    private val animator : Animator = Animator(this)
 
     override fun onDraw(canvas : Canvas) {
         canvas.drawVLTRNode(0, state.scale, paint)
-        state.update {
-            animated = false
-        }
-        if (animated) {
-            try {
-                Thread.sleep(delay)
-                this.invalidate()
-            } catch (ex: Exception) {
-
+        animator.animate {
+            state.update {
+                animator.stop()
             }
         }
+
     }
 
     override fun onTouchEvent(event : MotionEvent) : Boolean {
         when (event.action) {
             MotionEvent.ACTION_DOWN -> {
-                state.startUpdating {
-                    animated = true
-                    this.postInvalidate()
-                }
+               state.startUpdating {
+                   animator.start()
+               }
             }
         }
         return true
@@ -110,6 +106,7 @@ class VertLineToRectView(ctx : Context) : View(ctx) {
 
         fun update(cb : () -> Unit) {
             scale += dir * scGap
+            Log.d("scale is", "${scale}")
             if (scale > 1f) {
                 dir = 0f
                 cb()
@@ -121,6 +118,37 @@ class VertLineToRectView(ctx : Context) : View(ctx) {
                 dir = 1f
                 scale = 0f
                 cb()
+            }
+        }
+    }
+
+    data class Animator(var view : View, var animated : Boolean = false) {
+
+        fun animate(cb : () -> Unit) {
+            if (animated) {
+                Log.d("animating", "${SystemClock.currentThreadTimeMillis()}")
+                cb()
+                try {
+                    Thread.sleep(delay)
+                    view.invalidate()
+                } catch(ex : Exception) {
+
+                }
+            }
+        }
+
+        fun start() {
+            if (!animated) {
+                Log.d("started Animation", "${SystemClock.currentThreadTimeMillis()}")
+                animated = true
+                view.postInvalidate()
+            }
+        }
+
+        fun stop() {
+            if (animated) {
+                Log.d("stopping Animation", "${SystemClock.currentThreadTimeMillis()}")
+                animated = false
             }
         }
     }
